@@ -5,7 +5,7 @@ import random
 # Initialize Pygame
 pygame.init()
 
-# initialize the font variable for the game
+# Initialize the font variable for the game
 font = pygame.font.Font(None, 36)
 # Starting score
 player_score = 0
@@ -55,19 +55,19 @@ last_obstacle_time = pygame.time.get_ticks()  # Initial time when game starts
 # Function to generate a new obstacle with a gap
 def create_obstacle():
     # Randomly position the gap within the path
-    r = random.randint(0,2)
+    r = random.randint(0, 2)
     if r == 0:
         # The right and left parts of the obstacle
-        left_obstacle = pygame.Rect(path_x_left+gap_width, 0, gap_width, obstacle_height)
-        right_obstacle = pygame.Rect(path_x_left+2*gap_width, 0, gap_width, obstacle_height)
+        left_obstacle = pygame.Rect(path_x_left + gap_width, 0, gap_width, obstacle_height)
+        right_obstacle = pygame.Rect(path_x_left + 2 * gap_width, 0, gap_width, obstacle_height)
     if r == 1:
         # The right and left parts of the obstacle
         left_obstacle = pygame.Rect(path_x_left, 0, gap_width, obstacle_height)
-        right_obstacle = pygame.Rect(path_x_left+2*gap_width, 0, gap_width, obstacle_height)
+        right_obstacle = pygame.Rect(path_x_left + 2 * gap_width, 0, gap_width, obstacle_height)
     if r == 2:
         # The right and left parts of the obstacle
         left_obstacle = pygame.Rect(path_x_left, 0, gap_width, obstacle_height)
-        right_obstacle = pygame.Rect(path_x_left+gap_width, 0, gap_width, obstacle_height)
+        right_obstacle = pygame.Rect(path_x_left + gap_width, 0, gap_width, obstacle_height)
     return left_obstacle, right_obstacle
 
 # Game loop
@@ -127,16 +127,21 @@ while running:
     # Draw the ball
     pygame.draw.circle(screen, BLUE, (ball_x, ball_y), ball_radius)
 
-    # Draw the obstacles (blue rectangles)
+    # Draw the obstacles with outlines
     for obstacle_pair in obstacles:
+        # Draw filled obstacles (red)
         pygame.draw.rect(screen, RED, obstacle_pair[0])  # Left barrier
         pygame.draw.rect(screen, RED, obstacle_pair[1])  # Right barrier
 
-    # update score
+        # Draw outlines around the obstacles (white, 3-pixel thickness)
+        pygame.draw.rect(screen, WHITE, obstacle_pair[0], 3)  # Left barrier outline
+        pygame.draw.rect(screen, WHITE, obstacle_pair[1], 3)  # Right barrier outline
+
+    # Update score
     player_score += 1
     
-    #print score at top of screen
-    text = font.render(str(player_score), True, (255, 255, 255))
+    # Display score at the top of the screen
+    text = font.render(str(player_score), True, WHITE)
     screen.blit(text, (10, 10))
     
     # Update the display
