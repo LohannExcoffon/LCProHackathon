@@ -1,0 +1,117 @@
+import pygame
+import sys
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Define constants
+width, height = 800, 600
+ball_radius = 20
+path_width = 300
+speed = 5
+speed_increment = 0.005  # Speed increases over time
+ball_speed_x = 10
+obstacle_width = 80
+obstacle_height = 20
+obstacle_frequency = 30  # Higher value = fewer obstacles
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+
+# Initialize the screen
+screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption("Temple Run-like Game with Obstacles")
+
+# Define clock for controlling frame rate
+clock = pygame.time.Clock()
+
+# Ball starting position
+ball_x = width // 2
+ball_y = height - ball_radius - 10
+
+# Path boundaries
+path_x_left = (width - path_width) // 2
+path_x_right = path_x_left + path_width
+
+# Running flag
+running = True
+
+# Create obstacles list
+obstacles = []
+
+# Function to generate a new obstacle (wall) on the path
+def create_obstacle():
+    # Randomly place the obstacle on the path
+    obstacle_x = random.randint(path_x_left, path_x_right - obstacle_width)
+    obstacle_y = 0  # Start at the top of the screen
+    return pygame.Rect(obstacle_x, obstacle_y, obstacle_width, obstacle_height)
+
+# Game loop
+while running:
+    # Handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Get keys pressed
+    keys = pygame.key.get_pressed()
+
+    # Move the ball left and right
+    if keys[pygame.K_LEFT]:
+        ball_x -= ball_speed_x
+    if keys[pygame.K_RIGHT]:
+        ball_x += ball_speed_x
+
+    # Ensure the ball stays within path boundaries
+    if ball_x - ball_radius < path_x_left:
+        ball_x = path_x_left + ball_radius
+    if ball_x + ball_radius > path_x_right:
+        ball_x = path_x_right - ball_radius
+
+    # Increase speed over time
+    speed += speed_increment
+
+    # Create obstacles periodically
+    if random.randint(1, obstacle_frequency) == 1:
+        obstacles.append(create_obstacle())
+
+    # Move the obstacles down the screen
+    for obstacle in obstacles:
+        obstacle.y += int(speed)
+
+    # Remove obstacles that have gone off-screen
+    obstacles = [obstacle for obstacle in obstacles if obstacle.y < height]
+
+    # Check for collisions with obstacles
+    for obstacle in obstacles:
+        if obstacle.colliderect(pygame.Rect(ball_x - ball_radius, ball_y - ball_radius, ball_radius * 2, ball_radius * 2)):
+            print("Game Over!")
+            running = False
+
+    # Drawing
+    screen.fill(BLACK)  # Fill the background with black
+
+    # Draw the path (green rectangle)
+    pygame.draw.rect(screen, GREEN, (path_x_left, 0, path_width, height))
+
+    # Draw the ball
+    pygame.draw.circle(screen, RED, (ball_x, ball_y), ball_radius)
+
+    # Draw the obstacles (blue rectangles)
+    for obstacle in obstacles:
+        pygame.draw.rect(screen, BLUE, obstacle)
+
+    # Update the display
+    pygame.display.flip()
+
+    # Set the frame rate
+    clock.tick(60)
+
+# Quit the game
+pygame.quit()
+sys.exit()
