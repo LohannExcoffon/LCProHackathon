@@ -16,8 +16,8 @@ lanes = [-lane_width, 0, lane_width]
 score = 0  # Initialize the score
 
 # Define obstacle colors and safe color
-colors = [color.red, color.yellow, color.green]
-safe_color = random.choice(colors)
+color_map = {1:color.red, 2:color.yellow, 3:color.green}
+safe_color = random.choice(list(color_map.keys()))
 
 score_text = Text(text=str(score), scale=2, position=(-0.7, 0.45), color=color.black)
 
@@ -68,13 +68,19 @@ camera.rotation_x = 30  # Tilt the camera down to look at the player
 def create_obstacle():
     global safe_color
     open_lane = random.choice(lanes)  # Choose a random lane to keep open
-    for lane in lanes:
+
+    # Shuffle the colors to ensure three different colors
+    row_colors = list(color_map.values())
+    random.shuffle(row_colors)
+
+    for i, lane in enumerate(lanes):
         # Assign the safe color to the lane that is open
         if lane == open_lane:
-            obstacle_color = safe_color
+            obstacle_color = color_map[safe_color]
         else:
-            obstacle_color = random.choice(colors)  # Random color for other lanes
-
+            obstacle_color = row_colors.pop(0) if row_colors[0] != color_map[safe_color] else row_colors.pop(1)
+        
+        # Create the obstacle entity
         obstacle = Entity(
             model='cube',
             color=obstacle_color,
@@ -84,10 +90,10 @@ def create_obstacle():
         )
         obstacles.append(obstacle)
 
-
-# Function to update the game state
+billboard_update_allowed = True
+# update game state
 def update():
-    global score, player_speed, last_update_time, obstacle_speed
+    global score, player_speed, last_update_time, obstacle_speed, billboard_update_allowed
 
     current_time = time.time()
 
@@ -105,18 +111,28 @@ def update():
     player.x = max(-lane_width, min(lane_width, player.x))
 
     # Update obstacles
+    obstacles_to_remove = []
     for obstacle in obstacles:
         obstacle.z -= time.dt * obstacle_speed
         if obstacle.z < -10:
-            obstacles.remove(obstacle)
-            destroy(obstacle)
+            obstacles_to_remove.append(obstacle)
             score += 1  # Increase score as obstacles pass by
             score_text.text = str(score)  # Update score display
+
+    # Remove and destroy obstacles after processing
+    for obstacle in obstacles_to_remove:
+        obstacles.remove(obstacle)
+        destroy(obstacle)
+
+    # Show the billboard color after all obstacles pass
+    if not obstacles and billboard_update_allowed:  # Only update if there are no obstacles left and the flag is True
+        show_billboard_color()
+        billboard_update_allowed = False 
 
     # Check for collisions
     for obstacle in obstacles:
         if player.intersects(obstacle).hit:
-            if obstacle.color == safe_color:
+            if obstacle.color == color_map[safe_color]:
                 # Safe collision
                 print(f"Safe Pass! Current Score: {score}")
             else:
@@ -129,10 +145,11 @@ def update():
 
 # Function to show the correct color on the billboard
 def show_billboard_color():
-    global safe_color
-    safe_color = random.choice(colors)  # Randomly select a new safe color
-    billboard.change_color(safe_color)  # Show the safe color on the billboard
-    invoke(clear_billboard, delay=1.5)  # Clear the color after 1.5 seconds
+    global safe_color, billboard_update_allowed, obstacle_speed
+    safe_color = random.choice(list(color_map.keys()))  # Randomly select a new safe color
+    billboard.change_color(color_map[safe_color])  # Show the safe color on the billboard
+    invoke(clear_billboard, delay=obstacle_speed/2)  # Clear the color after 1.5 seconds
+    billboard_update_allowed = True  # Clear the color after 1.5 seconds
 
 
 # Function to clear the billboard color
