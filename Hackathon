@@ -5,16 +5,20 @@ import random
 # Initialize Pygame
 pygame.init()
 
+
+# initialize the font variable for the game
+font = pygame.font.Font(None, 36)
+
 # Define constants
-width, height = 800, 600
-ball_radius = 20
-path_width = 300
-speed = 5
-speed_increment = 0.005  # Speed increases over time
+width, height = 1000, 800
+ball_radius = 15
+path_width = 350
+speed = 3
+speed_increment = 0.001  # Speed increases over time
 ball_speed_x = 10
-obstacle_width = 80
-obstacle_height = 20
-obstacle_frequency = 30  # Higher value = fewer obstacles
+obstacle_width = 70
+obstacle_height = 15
+obstacle_frequency = 40  # Higher value = fewer obstacles
 
 # Colors
 WHITE = (255, 255, 255)
@@ -25,7 +29,7 @@ BLUE = (0, 0, 255)
 
 # Initialize the screen
 screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption("Temple Run-like Game with Obstacles")
+pygame.display.set_caption("Obstacles on Path")
 
 # Define clock for controlling frame rate
 clock = pygame.time.Clock()
@@ -37,6 +41,9 @@ ball_y = height - ball_radius - 10
 # Path boundaries
 path_x_left = (width - path_width) // 2
 path_x_right = path_x_left + path_width
+
+# Starting score
+player_score = 0
 
 # Running flag
 running = True
@@ -91,21 +98,29 @@ while running:
     for obstacle in obstacles:
         if obstacle.colliderect(pygame.Rect(ball_x - ball_radius, ball_y - ball_radius, ball_radius * 2, ball_radius * 2)):
             print("Game Over!")
+            print("Your Score: " + player_score)
             running = False
 
     # Drawing
     screen.fill(BLACK)  # Fill the background with black
 
-    # Draw the path (green rectangle)
-    pygame.draw.rect(screen, GREEN, (path_x_left, 0, path_width, height))
+    # Draw the path white
+    pygame.draw.rect(screen, WHITE, (path_x_left, 0, path_width, height))
 
     # Draw the ball
-    pygame.draw.circle(screen, RED, (ball_x, ball_y), ball_radius)
+    pygame.draw.circle(screen, BLUE, (ball_x, ball_y), ball_radius)
 
     # Draw the obstacles (blue rectangles)
     for obstacle in obstacles:
-        pygame.draw.rect(screen, BLUE, obstacle)
+        pygame.draw.rect(screen, RED, obstacle)
 
+    #print score at top of screen
+    text = font.render(str(player_score), True, (255, 255, 255))
+    screen.blit(text, (10, 10))
+    
+    # increase player score with frames
+    player_score += 1
+    
     # Update the display
     pygame.display.flip()
 
