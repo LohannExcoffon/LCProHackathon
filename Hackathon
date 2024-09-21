@@ -5,20 +5,21 @@ import random
 # Initialize Pygame
 pygame.init()
 
-
 # initialize the font variable for the game
 font = pygame.font.Font(None, 36)
+# Starting score
+player_score = 0
 
 # Define constants
-width, height = 1000, 800
+width, height = 800, 600
 ball_radius = 15
-path_width = 350
+path_width = 300
 speed = 3
 speed_increment = 0.001  # Speed increases over time
 ball_speed_x = 10
-obstacle_width = 70
-obstacle_height = 15
-obstacle_frequency = 40  # Higher value = fewer obstacles
+obstacle_height = 20
+gap_width = path_width // 3  # The gap is 1/3 of the path's width
+obstacle_interval = 2000  # Time interval for obstacle appearance (in milliseconds)
 
 # Colors
 WHITE = (255, 255, 255)
@@ -29,7 +30,7 @@ BLUE = (0, 0, 255)
 
 # Initialize the screen
 screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption("Obstacles on Path")
+pygame.display.set_caption("Game")
 
 # Define clock for controlling frame rate
 clock = pygame.time.Clock()
@@ -42,27 +43,40 @@ ball_y = height - ball_radius - 10
 path_x_left = (width - path_width) // 2
 path_x_right = path_x_left + path_width
 
-# Starting score
-player_score = 0
-
 # Running flag
 running = True
 
 # Create obstacles list
 obstacles = []
 
-# Function to generate a new obstacle (wall) on the path
+# Track time for obstacle generation
+last_obstacle_time = pygame.time.get_ticks()  # Initial time when game starts
+
+# Function to generate a new obstacle with a gap
 def create_obstacle():
-    # Randomly place the obstacle on the path
-    obstacle_x = random.randint(path_x_left, path_x_right - obstacle_width)
-    obstacle_y = 0  # Start at the top of the screen
-    return pygame.Rect(obstacle_x, obstacle_y, obstacle_width, obstacle_height)
+    # Randomly position the gap within the path
+    r = random.randint(0,2)
+    if r == 0:
+        # The right and left parts of the obstacle
+        left_obstacle = pygame.Rect(path_x_left+gap_width, 0, gap_width, obstacle_height)
+        right_obstacle = pygame.Rect(path_x_left+2*gap_width, 0, gap_width, obstacle_height)
+    if r == 1:
+        # The right and left parts of the obstacle
+        left_obstacle = pygame.Rect(path_x_left, 0, gap_width, obstacle_height)
+        right_obstacle = pygame.Rect(path_x_left+2*gap_width, 0, gap_width, obstacle_height)
+    if r == 2:
+        # The right and left parts of the obstacle
+        left_obstacle = pygame.Rect(path_x_left, 0, gap_width, obstacle_height)
+        right_obstacle = pygame.Rect(path_x_left+gap_width, 0, gap_width, obstacle_height)
+    return left_obstacle, right_obstacle
 
 # Game loop
 while running:
     # Handle events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            print("Game Over!")
+            print("Your Score: " + str(player_score))
             running = False
 
     # Get keys pressed
@@ -83,43 +97,47 @@ while running:
     # Increase speed over time
     speed += speed_increment
 
-    # Create obstacles periodically
-    if random.randint(1, obstacle_frequency) == 1:
+    # Check if 1 second has passed to generate a new obstacle
+    current_time = pygame.time.get_ticks()
+    if current_time - last_obstacle_time > obstacle_interval:
         obstacles.append(create_obstacle())
+        last_obstacle_time = current_time
 
     # Move the obstacles down the screen
-    for obstacle in obstacles:
-        obstacle.y += int(speed)
+    for obstacle_pair in obstacles:
+        obstacle_pair[0].y += int(speed)
+        obstacle_pair[1].y += int(speed)
 
     # Remove obstacles that have gone off-screen
-    obstacles = [obstacle for obstacle in obstacles if obstacle.y < height]
+    obstacles = [obstacle for obstacle in obstacles if obstacle[0].y < height]
 
-    # Check for collisions with obstacles
-    for obstacle in obstacles:
-        if obstacle.colliderect(pygame.Rect(ball_x - ball_radius, ball_y - ball_radius, ball_radius * 2, ball_radius * 2)):
+    # Check for collisions with the barriers
+    ball_rect = pygame.Rect(ball_x - ball_radius, ball_y - ball_radius, ball_radius * 2, ball_radius * 2)
+    for obstacle_pair in obstacles:
+        if ball_rect.colliderect(obstacle_pair[0]) or ball_rect.colliderect(obstacle_pair[1]):
             print("Game Over!")
-            print("Your Score: " + player_score)
             running = False
 
     # Drawing
     screen.fill(BLACK)  # Fill the background with black
 
-    # Draw the path white
+    # Draw the path (green rectangle)
     pygame.draw.rect(screen, WHITE, (path_x_left, 0, path_width, height))
 
     # Draw the ball
     pygame.draw.circle(screen, BLUE, (ball_x, ball_y), ball_radius)
 
     # Draw the obstacles (blue rectangles)
-    for obstacle in obstacles:
-        pygame.draw.rect(screen, RED, obstacle)
+    for obstacle_pair in obstacles:
+        pygame.draw.rect(screen, RED, obstacle_pair[0])  # Left barrier
+        pygame.draw.rect(screen, RED, obstacle_pair[1])  # Right barrier
 
+    # update score
+    player_score += 1
+    
     #print score at top of screen
     text = font.render(str(player_score), True, (255, 255, 255))
     screen.blit(text, (10, 10))
-    
-    # increase player score with frames
-    player_score += 1
     
     # Update the display
     pygame.display.flip()
