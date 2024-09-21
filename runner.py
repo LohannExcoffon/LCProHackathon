@@ -32,25 +32,32 @@ player = Entity(
 
 # Define the ground
 ground = Entity(
-    model='plane',
-    scale=(50, 1, 50),
-    color=color.white,
-    collider='box'
+    model = 'plane',
+    texture = 'floor.jpg',
+    color = color.dark_gray,
+    scale = (50, 1, 50),
+    collider = 'box'
 )
 
 # Define side walls for aesthetics at the edges of the player's movement range
 left_wall = Entity(
     model='cube',
+    texture = 'wall',
+    texture_scale = (5,5),
     color=color.dark_gray,
     scale=(0.5, 5, 50),  # Make the wall thinner
-    position=(-lane_width - 0.8, 2.5, 0)  # Positioned just outside the left lane
+    position=(-lane_width - 0.8, 2.5, 0),  # Positioned just outside the left lane
+    cast_shadows = True
 )
 
 right_wall = Entity(
     model='cube',
+    texture = 'wall',
+    texture_scale = (5,5),
     color=color.dark_gray,
     scale=(0.5, 5, 50),  # Make the wall thinner
-    position=(lane_width + 0.8, 2.5, 0)  # Positioned just outside the right lane
+    position=(lane_width + 0.8, 2.5, 0),  # Positioned just outside the right lane
+    cast_shadows = True
 )
 
 # Define the billboard to show the safe color
