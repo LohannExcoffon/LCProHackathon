@@ -37,6 +37,7 @@ ground = Entity(
     model='plane',
     scale=(50, 1, 50),
     color=color.white,
+    texture = 'floor.jpg',
     collider='box'
 )
 
@@ -44,6 +45,7 @@ ground = Entity(
 left_wall = Entity(
     model='cube',
     color=color.dark_gray,
+    texture = 'wall.jpg',
     scale=(0.5, 5, 50),  # Make the wall thinner
     position=(-lane_width - 0.8, 2.5, 0)  # Positioned just outside the left lane
 )
@@ -51,6 +53,7 @@ left_wall = Entity(
 right_wall = Entity(
     model='cube',
     color=color.dark_gray,
+    texture = 'wall.jpg',
     scale=(0.5, 5, 50),  # Make the wall thinner
     position=(lane_width + 0.8, 2.5, 0)  # Positioned just outside the right lane
 )
