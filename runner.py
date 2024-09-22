@@ -3,6 +3,7 @@ import random
 from time import sleep
 from billboard import Billboard
 from obstacle import Obstacle
+from player import Player
 
 # Create the Ursina app
 app = Ursina()
@@ -15,22 +16,13 @@ spawn_interval = 2
 lane_width = 2
 lanes = [-lane_width, 0, lane_width]
 score = 0  # Initialize the score
-last_row = 0
 
 # Define obstacle colors and safe color
 color_map = {1:color.red, 2:color.yellow, 3:color.green}
 safe_color = random.choice(list(color_map.keys()))
 
-score_text = Text(text=str(score), scale=2, position=(-0.7, 0.45), color=color.black)
-
 # Define the player entity
-player = Entity(
-    model='cube',
-    color=color.azure,
-    scale=(1, 1, 1),
-    position=(0, 0.5, -5),
-    collider='box'
-)
+player = Player(0,0.5,-5,(1,1,1))
 
 # Define the ground
 ground = Entity(
@@ -61,7 +53,6 @@ right_wall = Entity(
 # Define the billboard to show the safe color
 billboard = Billboard(lane_width,color_map[safe_color])
 
-
 # List to keep track of obstacles
 obstacles = []
 
@@ -69,7 +60,7 @@ obstacles = []
 camera.position = (0, 15, -25)  # Higher position, behind the player
 camera.rotation_x = 30  # Tilt the camera down to look at the player
 
-
+score_text = Text(text=str(score), scale=2, position=(-0.7, 0.45), color=color.black, parent=camera.ui)
 # Function to create a long obstacle with a color
 def create_obstacle():
     global safe_color
@@ -96,17 +87,15 @@ def update():
     current_time = time.time()
 
     if current_time - last_update_time >= 1:
-        obstacle_speed += 0.01  # Increase the speed
+        obstacle_speed += 0.1  # Increase the speed
         last_update_time = current_time
 
     # Player movement
     if held_keys['a']:
-        player.x -= time.dt * player_speed
+        player.move(-time.dt * player_speed,lane_width)
     if held_keys['d']:
-        player.x += time.dt * player_speed
+        player.move(time.dt * player_speed,lane_width)
 
-    # Keep player within lanes
-    player.x = max(-lane_width, min(lane_width, player.x))
 
     # Update obstacles
     obstacles_to_remove = []
@@ -116,7 +105,7 @@ def update():
             obstacles_to_remove.append(obstacle)
             score += 1  # Increase score as obstacles pass by
             score_text.text = str(score)  # Update score display
-        elif player.z - obstacle.get_z() < 1.3 and player.z - obstacle.get_z() >= 1.2:
+        elif player.get_z() - obstacle.get_z() < 1.3 and player.get_z() - obstacle.get_z() >= 1.2:
             change_billboard()
 
 
@@ -128,7 +117,7 @@ def update():
 
     # Check for collisions
     for obstacle in obstacles:
-        if player.intersects(obstacle.get_shape()).hit:
+        if player.get_shape().intersects(obstacle.get_shape()).hit:
             if obstacle.get_color() == color_map[safe_color]:
                 # Safe collision
                 print(f"Safe Pass! Current Score: {score}")
