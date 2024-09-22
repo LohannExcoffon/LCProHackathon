@@ -2,6 +2,7 @@ from ursina import *
 import random
 from time import sleep
 from billboard import Billboard
+from obstacle import Obstacle
 
 # Create the Ursina app
 app = Ursina()
@@ -10,10 +11,11 @@ app = Ursina()
 player_speed = 5
 last_update_time = time.time()
 obstacle_speed = 5
-spawn_interval = 1.5
+spawn_interval = 2
 lane_width = 2
 lanes = [-lane_width, 0, lane_width]
 score = 0  # Initialize the score
+last_row = 0
 
 # Define obstacle colors and safe color
 color_map = {1:color.red, 2:color.yellow, 3:color.green}
@@ -32,36 +34,30 @@ player = Entity(
 
 # Define the ground
 ground = Entity(
-    model = 'plane',
-    texture = 'floor.jpg',
-    color = color.dark_gray,
-    scale = (50, 1, 50),
-    collider = 'box'
+    model='plane',
+    scale=(50, 1, 50),
+    color=color.white,
+    collider='box'
 )
 
 # Define side walls for aesthetics at the edges of the player's movement range
 left_wall = Entity(
     model='cube',
-    texture = 'wall',
-    texture_scale = (5,5),
     color=color.dark_gray,
     scale=(0.5, 5, 50),  # Make the wall thinner
-    position=(-lane_width - 0.8, 2.5, 0),  # Positioned just outside the left lane
-    cast_shadows = True
+    position=(-lane_width - 0.8, 2.5, 0)  # Positioned just outside the left lane
 )
 
 right_wall = Entity(
     model='cube',
-    texture = 'wall',
-    texture_scale = (5,5),
     color=color.dark_gray,
     scale=(0.5, 5, 50),  # Make the wall thinner
-    position=(lane_width + 0.8, 2.5, 0),  # Positioned just outside the right lane
-    cast_shadows = True
+    position=(lane_width + 0.8, 2.5, 0)  # Positioned just outside the right lane
 )
 
 # Define the billboard to show the safe color
-billboard = Billboard(lane_width,color.black)
+billboard = Billboard(lane_width,color_map[safe_color])
+
 
 # List to keep track of obstacles
 obstacles = []
@@ -88,19 +84,11 @@ def create_obstacle():
             obstacle_color = row_colors.pop(0) if row_colors[0] != color_map[safe_color] else row_colors.pop(1)
         
         # Create the obstacle entity
-        obstacle = Entity(
-            model='cube',
-            color=obstacle_color,
-            scale=(2, 1, 1),  # Slightly more than lane width to ensure coverage
-            position=(lane, 0.5, 20),  # Adjusted Y position to match player level
-            collider='box'
-        )
+        obstacle = Obstacle(lane,0.5,20,obstacle_color)
         obstacles.append(obstacle)
 
-billboard_update_allowed = True
-# update game state
 def update():
-    global score, player_speed, last_update_time, obstacle_speed, billboard_update_allowed
+    global score, player_speed, last_update_time, obstacle_speed
 
     current_time = time.time()
 
@@ -120,43 +108,41 @@ def update():
     # Update obstacles
     obstacles_to_remove = []
     for obstacle in obstacles:
-        obstacle.z -= time.dt * obstacle_speed
-        if obstacle.z < -10:
+        obstacle.move(-(time.dt * obstacle_speed))
+        if obstacle.get_z() < -10:
             obstacles_to_remove.append(obstacle)
             score += 1  # Increase score as obstacles pass by
             score_text.text = str(score)  # Update score display
+        elif player.z - obstacle.get_z() < 1.3 and player.z - obstacle.get_z() >= 1.2:
+            change_billboard()
+
+
 
     # Remove and destroy obstacles after processing
     for obstacle in obstacles_to_remove:
         obstacles.remove(obstacle)
-        destroy(obstacle)
-
-    # Show the billboard color after all obstacles pass
-    if not obstacles and billboard_update_allowed:  # Only update if there are no obstacles left and the flag is True
-        show_billboard_color()
-        billboard_update_allowed = False 
+        destroy(obstacle.get_shape())
 
     # Check for collisions
     for obstacle in obstacles:
-        if player.intersects(obstacle).hit:
-            if obstacle.color == color_map[safe_color]:
+        if player.intersects(obstacle.get_shape()).hit:
+            if obstacle.get_color() == color_map[safe_color]:
                 # Safe collision
                 print(f"Safe Pass! Current Score: {score}")
             else:
                 # Game over
                 print(f"Game Over! Final Score: {score}")
                 loseSound.play()
+                gameSound.stop()
                 sleep(loseSound.length)
                 application.quit()
 
 
 # Function to show the correct color on the billboard
-def show_billboard_color():
-    global safe_color, billboard_update_allowed, obstacle_speed
+def change_billboard():
+    global safe_color, billboard_update_allowed
     safe_color = random.choice(list(color_map.keys()))  # Randomly select a new safe color
     billboard.change_color(color_map[safe_color])  # Show the safe color on the billboard
-    invoke(clear_billboard, delay=obstacle_speed/2)  # Clear the color after 1.5 seconds
-    billboard_update_allowed = True  # Clear the color after 1.5 seconds
 
 
 # Function to clear the billboard color
@@ -166,14 +152,13 @@ def clear_billboard():
 
 # Function to spawn obstacles periodically
 def spawn_obstacles():
-    create_obstacle()
-    show_billboard_color()  # Show the safe color on the billboard each time
+    create_obstacle() 
     invoke(spawn_obstacles, delay=spawn_interval)
 
 
 # Creates sounds
 gameSound = Audio(sound_file_name='gameSound.wav', volume=1, loop=True, autoplay=True)
-loseSound = Audio(sound_file_name='loseSound.wav', volume=1, loop=False, loops=1, autoplay=False)
+loseSound = Audio(sound_file_name='lose.wav', volume=1, loop=False, loops=1, autoplay=False)
 
 # Start the obstacle spawning
 spawn_obstacles()
