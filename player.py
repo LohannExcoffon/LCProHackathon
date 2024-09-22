@@ -6,10 +6,10 @@ class Player:
         self._x, self._y, self._z = x,y,z
         self._scale = size
         self._shape = Entity(
-            model='cube',
-            color=color.azure,
-            scale=self._scale,
-            position=(self._x, self._y, self._z), # 0 0.5 -5
+            model='rocketobj.obj', 
+            color=color.gray,
+            scale=(0.0045,0.0045,0.0045),
+            position=(self._x, self._y, self._z),
             collider='box'
         )
     
