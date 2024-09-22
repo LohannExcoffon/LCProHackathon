@@ -8,6 +8,12 @@ from player import Player
 # Create the Ursina app
 app = Ursina()
 
+window.fullscreen = False
+window.size = (1152, 720)
+window.borderless = False  # Ensure the window has borders
+window.show_entity_count = False 
+window.update_aspect_ratio()
+
 # Define variables
 player_speed = 5
 last_update_time = time.time()
@@ -16,9 +22,10 @@ spawn_interval = 2
 lane_width = 2
 lanes = [-lane_width, 0, lane_width]
 score = 0  # Initialize the score
+passed = False
 
 # Define obstacle colors and safe color
-color_map = {1:color.red, 2:color.yellow, 3:color.green}
+color_map = {1:Vec4(186/255, 23/255, 143/255, 1), 2:Vec4(77/255, 32/255, 203/255, 1), 3:Vec4(37/255, 150/255, 215/255, 1)}
 safe_color = random.choice(list(color_map.keys()))
 
 # Define the player entity
@@ -53,14 +60,14 @@ right_wall = Entity(
 # Define the billboard to show the safe color
 billboard = Billboard(lane_width,color_map[safe_color])
 
-# List to keep track of obstacles
-obstacles = []
 
-# Adjust the camera position and rotation
 camera.position = (0, 15, -25)  # Higher position, behind the player
 camera.rotation_x = 30  # Tilt the camera down to look at the player
+score_text = Text(text="Score: "+str(score), scale=2, position=(-0.7, 0.45,-0.05), color=color.white, font='assets/Orbitron-Bold.ttf',parent=camera.ui)
+name_text = Text(text="AstroRun", scale=2, position=(0.35, 0.45,-0.05), color=color.white, font='assets/Orbitron-Bold.ttf',parent=camera.ui)
 
-score_text = Text(text=str(score), scale=2, position=(-0.7, 0.45), color=color.black, parent=camera.ui)
+# List to keep track of obstacles
+obstacles = []
 # Function to create a long obstacle with a color
 def create_obstacle():
     global safe_color
@@ -82,7 +89,7 @@ def create_obstacle():
         obstacles.append(obstacle)
 
 def update():
-    global score, player_speed, last_update_time, obstacle_speed, spawn_interval
+    global score, player_speed, last_update_time, obstacle_speed, passed, spawn_interval
 
     current_time = time.time()
 
@@ -105,12 +112,14 @@ def update():
         obstacle.move(-(time.dt * obstacle_speed))
         if obstacle.get_z() < -10:
             obstacles_to_remove.append(obstacle)
-            score += 1  # Increase score as obstacles pass by
-            score_text.text = str(score)  # Update score display
         elif player.get_z() - obstacle.get_z() < 1.3 and player.get_z() - obstacle.get_z() >= 1.2:
             change_billboard()
-
-
+    
+    # Adjust score
+    if passed:
+        score+=1
+        passed = False
+    
 
     # Remove and destroy obstacles after processing
     for obstacle in obstacles_to_remove:
@@ -131,12 +140,15 @@ def update():
                 sleep(loseSound.length)
                 application.quit()
 
+    score_text.text = "Score: "+str(score)
+
 
 # Function to show the correct color on the billboard
 def change_billboard():
-    global safe_color, billboard_update_allowed
+    global safe_color, passed
     safe_color = random.choice(list(color_map.keys()))  # Randomly select a new safe color
     billboard.change_color(color_map[safe_color])  # Show the safe color on the billboard
+    passed = True
 
 
 # Function to clear the billboard color
