@@ -82,12 +82,14 @@ def create_obstacle():
         obstacles.append(obstacle)
 
 def update():
-    global score, player_speed, last_update_time, obstacle_speed
+    global score, player_speed, last_update_time, obstacle_speed, spawn_interval
 
     current_time = time.time()
 
     if current_time - last_update_time >= 1:
         obstacle_speed += 0.1  # Increase the speed
+        spawn_interval *= 0.98
+        player_speed *= 1.01
         last_update_time = current_time
 
     # Player movement
